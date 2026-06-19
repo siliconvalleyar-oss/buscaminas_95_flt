@@ -1,0 +1,16 @@
+juego buscaminars 95 flutter , agregar assets/logo.png pasa icono de la aplicacion . en seleccionar dificultar hacer o agegar opcion custom donde el usuario ponga ancho y alto de los cuadraditos tapados del juego .
+
+
+no funciona el boton del logo de la carita o icono del reset  para inicar nuevo juego
+
+no se ven bien los display de la cantidad de bomabas a descubrir y tiempo . los pixeles de esos display como el  juego original
+
+
+
+
+
+pushear con  tag
+
+
+
+compilar todo y subir al mobil

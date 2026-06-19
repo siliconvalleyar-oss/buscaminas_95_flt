@@ -857,8 +857,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         mainAxisSize: MainAxisSize.min,
         children: text.split('').map((c) {
           return Container(
-            width: 16,
-            height: 26,
+            width: 18,
+            height: 28,
             alignment: Alignment.center,
             child: _buildLedChar(c, warning),
           );
@@ -869,7 +869,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   Widget _buildLedChar(String char, bool warning) {
     return CustomPaint(
-      size: const Size(14, 26),
+      size: const Size(16, 28),
       painter: _LedCharPainter(char: char, warning: warning),
     );
   }
@@ -892,20 +892,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
     return GestureDetector(
       onTapDown: (_) {
-        if (_minefield.state == GameState.playing) {
-          setState(() => _pressingFace = true);
-        }
+        setState(() => _pressingFace = true);
       },
       onTapUp: (_) {
-        if (_minefield.state == GameState.playing) {
-          setState(() => _pressingFace = false);
-          _initGame();
-        }
+        setState(() => _pressingFace = false);
+        _initGame();
       },
       onTapCancel: () {
-        if (_minefield.state == GameState.playing) {
-          setState(() => _pressingFace = false);
-        }
+        setState(() => _pressingFace = false);
       },
       child: Container(
         width: 36,
@@ -1208,25 +1202,34 @@ class _LedCharPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
-    final segW = w * 0.15;
-    final segL = w * 0.7;
-    final segS = w * 0.1;
-    final segH = h * 0.12;
+
+    // Proporciones estilo Minesweeper 98 original
+    final segThick = 3.0; // grosor de segmento (pixel-art nítido)
+    final gap = 2.0;      // espacio desde el borde
+    final vertLen = (h / 2) - gap - segThick - 1.0; // largo segmentos verticales
 
     final segs = _segments[char] ?? [false, false, false, false, false, false, false];
     final onColor = warning ? const Color(0xFFFF4400) : Win98Colors.ledOn;
     final offColor = warning ? const Color(0xFF441100) : Win98Colors.ledOff;
 
-    _drawSeg(canvas, Offset(segS, 1), segL, segH, true, segs[0] ? onColor : offColor);
-    _drawSeg(canvas, Offset(w - segW - 1, segS), segH, segL * 0.45, false,
+    // seg0: horizontal superior
+    _drawSeg(canvas, Offset(gap, 1.0), w - gap * 2, segThick, true, segs[0] ? onColor : offColor);
+    // seg1: vertical superior derecha
+    _drawSeg(canvas, Offset(w - segThick - 1, gap), segThick, vertLen, false,
         segs[1] ? onColor : offColor);
-    _drawSeg(canvas, Offset(w - segW - 1, h * 0.5 + segS * 0.3), segH, segL * 0.45, false,
+    // seg2: vertical inferior derecha
+    _drawSeg(canvas, Offset(w - segThick - 1, h / 2 + 1), segThick, vertLen, false,
         segs[2] ? onColor : offColor);
-    _drawSeg(canvas, Offset(segS, h - segH - 1), segL, segH, true, segs[3] ? onColor : offColor);
-    _drawSeg(canvas, Offset(1, h * 0.5 + segS * 0.3), segH, segL * 0.45, false,
+    // seg3: horizontal inferior
+    _drawSeg(canvas, Offset(gap, h - segThick - 1), w - gap * 2, segThick, true,
+        segs[3] ? onColor : offColor);
+    // seg4: vertical inferior izquierda
+    _drawSeg(canvas, Offset(1, h / 2 + 1), segThick, vertLen, false,
         segs[4] ? onColor : offColor);
-    _drawSeg(canvas, Offset(1, segS), segH, segL * 0.45, false, segs[5] ? onColor : offColor);
-    _drawSeg(canvas, Offset(segS, h * 0.5 - segH / 2), segL, segH, true,
+    // seg5: vertical superior izquierda
+    _drawSeg(canvas, Offset(1, gap), segThick, vertLen, false, segs[5] ? onColor : offColor);
+    // seg6: horizontal medio
+    _drawSeg(canvas, Offset(gap, h / 2 - segThick / 2), w - gap * 2, segThick, true,
         segs[6] ? onColor : offColor);
   }
 
