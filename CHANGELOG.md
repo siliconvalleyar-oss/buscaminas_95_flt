@@ -28,6 +28,7 @@
 - **Add:** Diálogo de puntuaciones con acceso desde el menú "Puntos"
 - **Add:** Botón "Reset" para borrar todas las puntuaciones guardadas
 - **Add:** Botón de mute para activar/desactivar sonidos en la barra de estado
+- **Add:** Caras personalizables — 7 estilos para el botón de reinicio (guardado en SharedPreferences)
 
 ### 🔧 Build y Configuración
 - **Fix:** `build.gradle.kts` — corregido error de sintaxis (llave faltante + import java.util.Properties)

@@ -69,7 +69,7 @@
 - [x] **Iconos iOS**: Reemplazar AppIcon.appiconset con el logo generado
 - [x] **Favicon web**: Actualizar favicon.png con el nuevo logo
 - [x] **Guardar scores**: Persistencia de mejores tiempos con SharedPreferences
-- [ ] **Personas personalizables**: Opción para cambiar la cara del botón
+- [x] **Personas personalizables**: Opción para cambiar la cara del botón
 
 ### Prioridad Media
 
