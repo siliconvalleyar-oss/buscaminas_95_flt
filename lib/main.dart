@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'game/cell.dart';
 import 'game/minefield.dart';
+import 'game/score_manager.dart';
 import 'audio/sound_manager.dart';
 
 void main() {
@@ -140,6 +141,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   late AnimationController _particleController;
   int _comboCount = 0;
   bool _timerWarning = false;
+  bool _newRecord = false;
 
   Timer? _gameTimer;
 
@@ -187,6 +189,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     _particles.clear();
     _confetti.clear();
     _timerWarning = false;
+    _newRecord = false;
     _gameTimer?.cancel();
   }
 
@@ -236,6 +239,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         _triggerConfetti();
         _soundManager.play('win');
         _gameTimer?.cancel();
+        _checkNewRecord();
       }
     }
 
@@ -253,6 +257,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       _triggerConfetti();
       _soundManager.play('win');
       _gameTimer?.cancel();
+      _checkNewRecord();
     }
 
     setState(() {});
@@ -301,6 +306,21 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       ));
     }
     _particleController.repeat(period: const Duration(milliseconds: 16));
+  }
+
+  void _checkNewRecord() async {
+    final elapsed = _minefield.elapsed.inSeconds;
+    final config = _currentConfig;
+    final isRecord = await ScoreManager.saveIfBest(
+      difficulty: _difficulty,
+      seconds: elapsed,
+      rows: config.rows,
+      cols: config.cols,
+      mines: config.mines,
+    );
+    if (isRecord && mounted) {
+      setState(() => _newRecord = true);
+    }
   }
 
   void _updateParticles() {
@@ -756,8 +776,121 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           const SizedBox(width: 4),
           _buildMenuItem('Dificultad', _showDifficultyDialog),
           const SizedBox(width: 4),
+          _buildMenuItem('Puntos', _showScoresDialog),
+          const SizedBox(width: 4),
           _buildMenuItem('Ayuda', _showAboutDialog),
         ],
+      ),
+    );
+  }
+
+  void _showScoresDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => FutureBuilder<Map<Difficulty, ScoreRecord>>(
+        future: ScoreManager.getAll(),
+        builder: (ctx, snapshot) {
+          final scores = snapshot.data ?? {};
+          return AlertDialog(
+            backgroundColor: Win98Colors.gray,
+            surfaceTintColor: Colors.transparent,
+            shape: BeveledRectangleBorder(
+              side: const BorderSide(color: Win98Colors.white, width: 2),
+              borderRadius: BorderRadius.zero,
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.emoji_events, size: 18, color: Color(0xFFFFD700)),
+                SizedBox(width: 6),
+                Text('Mejores Puntos',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: scores.isEmpty
+                ? const Text('Aún no hay puntuaciones.\n¡Juega y establece un récord!',
+                    style: TextStyle(fontSize: 12))
+                : SizedBox(
+                    width: 280,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: Difficulty.values.where((d) => scores.containsKey(d)).map((d) {
+                        final s = scores[d]!;
+                        final mins = s.seconds ~/ 60;
+                        final secs = s.seconds % 60;
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Win98Colors.darkGray),
+                              color: Win98Colors.lightGray,
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  d == Difficulty.beginner
+                                      ? Icons.looks_one
+                                      : d == Difficulty.intermediate
+                                          ? Icons.looks_two
+                                          : d == Difficulty.expert
+                                              ? Icons.looks_3
+                                              : Icons.tune,
+                                  size: 16,
+                                  color: Win98Colors.titleBlue,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    d.label.split(' (')[0],
+                                    style: const TextStyle(
+                                        fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Text(
+                                  '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Win98Colors.ledOn,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  await ScoreManager.resetAll();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Win98Colors.darkGray),
+                    color: Win98Colors.gray,
+                  ),
+                  child: const Text('Reset', style: TextStyle(fontSize: 11)),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Win98Colors.darkGray),
+                    color: Win98Colors.gray,
+                  ),
+                  child: const Text('Cerrar', style: TextStyle(fontSize: 12)),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -832,7 +965,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _buildLedDisplay(remaining.clamp(0, 999).toString().padLeft(3, '0')),
-          _buildFaceButton(),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildMuteButton(),
+              const SizedBox(width: 4),
+              _buildFaceButton(),
+            ],
+          ),
           _buildLedDisplay(
               min(elapsed, 999).toString().padLeft(3, '0'),
               warning: _timerWarning && _minefield.state == GameState.playing),
@@ -871,6 +1011,33 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     return CustomPaint(
       size: const Size(16, 28),
       painter: _LedCharPainter(char: char, warning: warning),
+    );
+  }
+
+  Widget _buildMuteButton() {
+    final isMuted = !_soundManager.enabled;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _soundManager.enabled = !_soundManager.enabled;
+          if (_soundManager.enabled) {
+            _soundManager.play('click');
+          }
+        });
+      },
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          border: Border.all(color: Win98Colors.darkGray),
+          color: Win98Colors.gray,
+        ),
+        child: Icon(
+          isMuted ? Icons.volume_off : Icons.volume_up,
+          size: 14,
+          color: isMuted ? Win98Colors.darkGray : Colors.black87,
+        ),
+      ),
     );
   }
 
@@ -985,22 +1152,45 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildComboDisplay() {
-    if (_comboCount < 3) return const SizedBox.shrink();
+    final showCombo = _comboCount >= 3;
+    final showRecord = _newRecord;
+    if (!showCombo && !showRecord) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Text(
-        '🔥 Combo x$_comboCount',
-        style: TextStyle(
-          color: Colors.orange,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          shadows: [
-            Shadow(
-              color: Colors.black.withValues(alpha: 0.5),
-              blurRadius: 2,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showCombo)
+            Text(
+              '🔥 Combo x$_comboCount',
+              style: TextStyle(
+                color: Colors.orange,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    blurRadius: 2,
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          if (showRecord)
+            Text(
+              '🏆 ¡Nuevo récord!',
+              style: TextStyle(
+                color: const Color(0xFFFFD700),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    blurRadius: 3,
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

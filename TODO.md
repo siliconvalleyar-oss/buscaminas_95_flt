@@ -66,14 +66,14 @@
 
 ### Prioridad Alta
 
-- [ ] **Iconos iOS**: Reemplazar AppIcon.appiconset con el logo generado
-- [ ] **Favicon web**: Actualizar favicon.png con el nuevo logo
+- [x] **Iconos iOS**: Reemplazar AppIcon.appiconset con el logo generado
+- [x] **Favicon web**: Actualizar favicon.png con el nuevo logo
+- [x] **Guardar scores**: Persistencia de mejores tiempos con SharedPreferences
 - [ ] **Personas personalizables**: Opción para cambiar la cara del botón
-- [ ] **Guardar scores**: Persistencia de mejores tiempos con SharedPreferences
 
 ### Prioridad Media
 
-- [ ] **Sonidos toggle**: Botón para activar/desactivar sonidos
+- [x] **Sonidos toggle**: Botón para activar/desactivar sonidos
 - [ ] **Animación de revelación**: Efecto de "descubrimiento" al revelar celdas
 - [ ] **Zoom / pan**: En tableros grandes, permitir scroll o zoom
 - [ ] **Modo oscuro**: Tema alternativo oscuro
